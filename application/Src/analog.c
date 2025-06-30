@@ -29,6 +29,7 @@
 #include "tle5011.h"
 #include "tle5012.h"
 #include "mcp320x.h"
+#include "ads834x.h"
 #include "mlx90363.h"
 #include "mlx90393.h"
 #include "as5048a.h"
@@ -552,6 +553,34 @@ void AxesInit (dev_config_t * p_dev_config)
 				}
 			}
 		}
+		else if (p_dev_config->pins[i] == ADS8341_CS)
+		{
+			for (uint8_t k=0; k<MAX_AXIS_NUM; k++)
+			{
+				if (p_dev_config->axis_config[k].source_main == i && sensors_cnt < MAX_AXIS_NUM)
+				{
+					sensors[sensors_cnt].type = ADS8341;
+					sensors[sensors_cnt].source = i;
+					
+					sensors_cnt++;
+					break;
+				}
+			}
+		}
+		else if (p_dev_config->pins[i] == ADS8344_CS)
+		{
+			for (uint8_t k=0; k<MAX_AXIS_NUM; k++)
+			{
+				if (p_dev_config->axis_config[k].source_main == i && sensors_cnt < MAX_AXIS_NUM)
+				{
+					sensors[sensors_cnt].type = ADS8344;
+					sensors[sensors_cnt].source = i;
+					
+					sensors_cnt++;
+					break;
+				}
+			}
+		}
 	}
 
 	if (p_dev_config->pins[21] == I2C_SCL && p_dev_config->pins[22] == I2C_SDA)			// PB10 and PB11
@@ -836,6 +865,28 @@ void AxesProcess (dev_config_t * p_dev_config)
 					tmp[i] = MCP320x_GetData(&sensors[k], channel) - p_dev_config->axis_config[i].offset_angle * 170;
 					if (tmp[i] < 0) tmp[i] += 4095;
 					else if (tmp[i] > 4095) tmp[i] -= 4095;
+				}
+				else		// offset disabled
+				{
+					tmp[i] = MCP320x_GetData(&sensors[k], channel);
+				}
+				raw_axis_data[i] = map2(tmp[i], 0, 4095, AXIS_MIN_VALUE, AXIS_MAX_VALUE);
+			}
+			else if (p_dev_config->pins[source] == ADS8341_CS ||
+							 p_dev_config->pins[source] == ADS8344_CS)				// source ADS834x
+			{
+				uint8_t k=0;
+				// search for needed sensor
+				for (k=0; k<MAX_AXIS_NUM; k++)
+				{
+					if (sensors[k].source == source) break;
+				}
+				// get data
+				if (p_dev_config->axis_config[i].offset_angle > 0)	// offset enabled
+				{
+					tmp[i] = ADS834x_GetData(&sensors[k], channel) - p_dev_config->axis_config[i].offset_angle * 170;
+					if (tmp[i] < 0) tmp[i] += AXIS_MAX_VALUE;
+					else if (tmp[i] > AXIS_MAX_VALUE) tmp[i] -= AXIS_MAX_VALUE;
 				}
 				else		// offset disabled
 				{

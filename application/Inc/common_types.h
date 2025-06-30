@@ -104,6 +104,8 @@ enum
 	AS5048A_SPI,
 	TLE5012,
 	MLX90363,
+	ADS8341,					// 16-bit, 4 channel, 100ksps SPI ADC
+	ADS8344,					// 16-bit, 8 channel, 100ksps SPI ADC
 	
 };
 
@@ -170,6 +172,9 @@ enum
 	
 	MLX90363_CS,
 	SHIFT_REG_CLK,
+
+	ADS8341_CS,
+	ADS8344_CS,
 };
 typedef int8_t pin_t;
 
